@@ -9,6 +9,7 @@ Get the workflow from [GitHub](https://github.com/ekonstantinidis/alfred-status-
 ## Support Services
 
  - [x] GitHub
+ - [x] Fast Mail
  - [ ] Twitter
  - [ ] Heroku
 

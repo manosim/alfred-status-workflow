@@ -1,5 +1,7 @@
 import sys
 import dateutil.parser
+import feedparser
+from datetime import datetime
 from workflow import Workflow, web
 
 ICON_STATUS_GOOD = "./assets/green.png"
@@ -17,6 +19,12 @@ SERVICES = [
         "service": 'GitHub',
         "valid_aliases": ["github", "gh"],
         "url": "https://status.github.com/api/status.json"
+    },
+    {
+        "code": "FM",
+        "service": "Fast Mail",
+        "valid_aliases": ["fm", "fast mail", "fastmail"],
+        "url": "http://www.fastmailstatus.com/feed"
     },
     {
         "code": "TW",
@@ -51,6 +59,25 @@ def get_status_gh(service):
     )
 
 
+def get_status_fm(service):
+    response = feedparser.parse(service["url"])
+
+    for item in response.entries:
+        status = item.title.split(" - ")[-1]
+        date = datetime(*item.published_parsed[:6])
+
+        icon = ICON_STATUS_GOOD if status == "Up" else None
+        icon = ICON_STATUS_MINOR if status == "Warning" else icon
+        icon = ICON_STATUS_MAJOR if status == "Down" else icon
+
+        wf.add_item(
+            title=status.capitalize(),
+            subtitle=date.strftime('%d %B %Y - ') + item.description,
+            icon=icon,
+            icontype="file"
+        )
+
+
 def get_status_tw(service):
     wf.add_item("Coming soon!")
 
@@ -58,6 +85,7 @@ def get_status_tw(service):
 def get_status(service):
     options = {
         "GH": get_status_gh,
+        "FM": get_status_fm,
         "TW": get_status_tw
     }
 
