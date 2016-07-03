@@ -1,6 +1,15 @@
 import sys
 from workflow import Workflow, web
 
+ICON_STATUS_GOOD = "./assets/green.png"
+ICON_STATUS_MINOR = "./assets/minor.png"
+ICON_STATUS_MAJOR = "./assets/major.png"
+
+UPDATE_SETTINGS = {
+    "github_slug": "ekonstantinidis/alfred-status-workflow"
+}
+HELP_URL = 'https://github.com/ekonstantinidis/alfred-status-workflow/issues'
+
 SERVICES = [
     {
         "code": "GH",
@@ -25,14 +34,11 @@ def find_service(query):
 
 
 def get_status_gh(service):
-    # FIXME: Implement Icon
     response = web.get(service["url"]).json()
     status = response["status"]
-    icon = "./assets/green.png" if status == "good" else None
-    icon = "./assets/minor.png" if status == "minor" else icon
-    icon = "./assets/major.png" if status == "major" else icon
-
-    wf.logger.critical(status)
+    icon = ICON_STATUS_GOOD if status == "good" else None
+    icon = ICON_STATUS_MINOR if status == "minor" else icon
+    icon = ICON_STATUS_MAJOR if status == "major" else icon
 
     wf.add_item(
         title=status.capitalize(),
@@ -65,12 +71,26 @@ def main(wf):
     # or if the modules/packages are in a directory added via `Workflow(libraries=...)`
     # Get args from Workflow, already in normalized Unicode
 
+    # Auto Update
+    if wf.update_available:
+        wf.add_item(
+            title="Update available!",
+            subtitle="Action this item to install the update",
+            autocomplete="workflow:update"
+        )
+
+    wf.add_item(
+        title="Update available!",
+        subtitle="Action this item to install the update",
+        autocomplete="workflow:update"
+    )
+
     query = " ".join(wf.args) if len(wf.args) > 0 else False
     service = find_service(query)
     if service:
         get_status(service)
     else:
-        wf.add_item('Invalid Query', 'Looks like this service is not supported or does not exist.')
+        wf.add_item('Invalid Service', 'Looks like this service is not supported or does not exist.')
 
     # Send output to Alfred. You can only call this once.
     # Well, you *can* call it multiple times, but Alfred won't be listening
@@ -80,7 +100,10 @@ def main(wf):
 
 if __name__ == '__main__':
     # Create a global `Workflow` object
-    wf = Workflow()
+    wf = Workflow(
+        update_settings=UPDATE_SETTINGS,
+        help_url=HELP_URL
+    )
     # Call your entry function via `Workflow.run()` to enable its helper
     # functions, like exception catching, ARGV normalization, magic
     # arguments etc.
