@@ -1,4 +1,5 @@
 import sys
+import dateutil.parser
 from workflow import Workflow, web
 
 ICON_STATUS_GOOD = "./assets/green.png"
@@ -36,13 +37,15 @@ def find_service(query):
 def get_status_gh(service):
     response = web.get(service["url"]).json()
     status = response["status"]
+    date = dateutil.parser.parse(response["last_updated"])
+
     icon = ICON_STATUS_GOOD if status == "good" else None
     icon = ICON_STATUS_MINOR if status == "minor" else icon
     icon = ICON_STATUS_MAJOR if status == "major" else icon
 
     wf.add_item(
         title=status.capitalize(),
-        subtitle=response["last_updated"],
+        subtitle=date.strftime('Last updated on %d %B %Y'),
         icon=icon,
         icontype="file"
     )
@@ -78,12 +81,6 @@ def main(wf):
             subtitle="Action this item to install the update",
             autocomplete="workflow:update"
         )
-
-    wf.add_item(
-        title="Update available!",
-        subtitle="Action this item to install the update",
-        autocomplete="workflow:update"
-    )
 
     query = " ".join(wf.args) if len(wf.args) > 0 else False
     service = find_service(query)
