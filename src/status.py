@@ -79,12 +79,6 @@ def main(wf):
             autocomplete="workflow:update"
         )
 
-    wf.add_item(
-        title="Update available!",
-        subtitle="Action this item to install the update",
-        autocomplete="workflow:update"
-    )
-
     query = " ".join(wf.args) if len(wf.args) > 0 else False
     service = find_service(query)
     if service:
