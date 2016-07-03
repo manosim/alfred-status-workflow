@@ -1,4 +1,6 @@
 import sys
+import re
+import cgi
 import dateutil.parser
 import feedparser
 from datetime import datetime
@@ -27,12 +29,23 @@ SERVICES = [
         "url": "http://www.fastmailstatus.com/feed"
     },
     {
-        "code": "TW",
-        "service": "Twitter",
-        "valid_aliases": ["twitter", "tw"],
-        "url": "https://status.github.com/api/status.json"
+        "code": "TRCI",
+        "service": "Travis CI",
+        "valid_aliases": ["travis", "travis ci", "travisci"],
+        "url": "https://www.traviscistatus.com/history.rss"
     }
 ]
+
+
+def remove_html(text):
+    tag_re = re.compile(r'(<!--.*?-->|<[^>]*>)')
+
+    # Remove well-formed tags, fixing mistakes by legitimate users
+    no_tags = tag_re.sub('', text)
+
+    # Clean up anything else by escaping
+    ready_for_web = cgi.escape(no_tags)
+    return ready_for_web
 
 
 def find_service(query):
@@ -78,15 +91,35 @@ def get_status_fm(service):
         )
 
 
-def get_status_tw(service):
-    wf.add_item("Coming soon!")
+def get_status_trci(service):
+    response = feedparser.parse(service["url"])
+
+    for item in response.entries:
+        status = remove_html(item.description).split(" - ")[0].split("UTC")[-1]
+        date = datetime(*item.published_parsed[:6])
+
+        icon = ICON_STATUS_GOOD if status == "Resolved" else None
+        icon = ICON_STATUS_GOOD if status == "Completed" else icon
+        icon = ICON_STATUS_GOOD if status == "Scheduled" else icon
+        icon = ICON_STATUS_MINOR if status == "In progress" else icon
+        icon = ICON_STATUS_MINOR if status == "Identified" else icon
+        icon = ICON_STATUS_MINOR if status == "Update" else icon
+        icon = ICON_STATUS_MINOR if status == "Monitoring" else icon
+        icon = ICON_STATUS_MAJOR if status == "Down" else icon
+
+        wf.add_item(
+            title=status.capitalize(),
+            subtitle=date.strftime('%d %B %Y - ') + remove_html(item.description).split(" - ")[-1],
+            icon=icon,
+            icontype="file"
+        )
 
 
 def get_status(service):
     options = {
         "GH": get_status_gh,
         "FM": get_status_fm,
-        "TW": get_status_tw
+        "TRCI": get_status_trci
     }
 
     service_code = service["code"]
@@ -97,10 +130,6 @@ def main(wf):
     # The Workflow instance will be passed to the function
     # you call from `Workflow.run`. Not so useful, as
     # the `wf` object created in `if __name__ ...` below is global.
-    #
-    # Your imports go here if you want to catch import errors (not a bad idea)
-    # or if the modules/packages are in a directory added via `Workflow(libraries=...)`
-    # Get args from Workflow, already in normalized Unicode
 
     # Auto Update
     if wf.update_available:
@@ -118,8 +147,6 @@ def main(wf):
         wf.add_item('Invalid Service', 'Looks like this service is not supported or does not exist.')
 
     # Send output to Alfred. You can only call this once.
-    # Well, you *can* call it multiple times, but Alfred won't be listening
-    # any more...
     wf.send_feedback()
 
 

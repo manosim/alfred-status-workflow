@@ -10,11 +10,12 @@ Get the workflow from [GitHub](https://github.com/ekonstantinidis/alfred-status-
 
  - [x] GitHub
  - [x] Fast Mail
+ - [x] Travis CI
  - [ ] Twitter
  - [ ] Heroku
 
 
 ## To Do
 
+ - [x] Auto Update
  - [ ] Implement more services
- - [ ] Auto Update
