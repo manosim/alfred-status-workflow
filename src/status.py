@@ -33,6 +33,12 @@ SERVICES = [
         "service": "Travis CI",
         "valid_aliases": ["travis", "travis ci", "travisci"],
         "url": "https://www.traviscistatus.com/history.rss"
+    },
+    {
+        "code": "DCKR",
+        "service": "Docker",
+        "valid_aliases": ["docker", "dckr"],
+        "url": "http://status.docker.com/pages/533c6539221ae15e3f000031/rss"
     }
 ]
 
@@ -91,6 +97,26 @@ def get_status_fm(service):
         )
 
 
+def get_status_docker(service):
+    response = feedparser.parse(service["url"])
+
+    for item in response.entries:
+
+        status = item.title.split(" - ")[-1]
+        date = datetime(*item.published_parsed[:6])
+
+        icon = ICON_STATUS_GOOD if status == "Up" else None
+        icon = ICON_STATUS_MINOR if status == "Warning" else icon
+        icon = ICON_STATUS_MAJOR if status == "Down" else icon
+
+        wf.add_item(
+            title=status.capitalize(),
+            subtitle=date.strftime('%d %B %Y - ') + item.description,
+            icon=icon,
+            icontype="file"
+        )
+
+
 def get_status_trci(service):
     response = feedparser.parse(service["url"])
 
@@ -119,7 +145,8 @@ def get_status(service):
     options = {
         "GH": get_status_gh,
         "FM": get_status_fm,
-        "TRCI": get_status_trci
+        "TRCI": get_status_trci,
+        "DCKR": get_status_docker
     }
 
     service_code = service["code"]
