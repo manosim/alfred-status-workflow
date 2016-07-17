@@ -101,17 +101,10 @@ def get_status_docker(service):
     response = feedparser.parse(service["url"])
 
     for item in response.entries:
-
-        status = item.title.split(" - ")[-1]
-        date = datetime(*item.published_parsed[:6])
-
-        icon = ICON_STATUS_GOOD if status == "Up" else None
-        icon = ICON_STATUS_MINOR if status == "Warning" else icon
-        icon = ICON_STATUS_MAJOR if status == "Down" else icon
-
+        icon = ICON_STATUS_GOOD
         wf.add_item(
-            title=status.capitalize(),
-            subtitle=date.strftime('%d %B %Y - ') + item.description,
+            title=item.title,
+            subtitle=remove_html(item.summary),
             icon=icon,
             icontype="file"
         )
